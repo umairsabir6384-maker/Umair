@@ -1,0 +1,7 @@
+{
+  "name": "PharmaFlow AI",
+  "description": "AI-powered pharmacy management for sales, purchases, customer recoveries, medicine returns, and FEFO expiry tracking.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
