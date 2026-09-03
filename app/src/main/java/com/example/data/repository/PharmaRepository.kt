@@ -213,6 +213,11 @@ class PharmaRepository(
         return purchaseId
     }
 
+    // Customer Ledger Queries
+    fun getSalesForCustomer(customerId: Long): Flow<List<SaleTransaction>> = dao.getSalesForCustomer(customerId)
+    fun getPaymentsForCustomer(customerId: Long): Flow<List<RecoveryPayment>> = dao.getPaymentsForCustomer(customerId)
+    suspend fun getCustomerById(customerId: Long): Customer? = dao.getCustomerById(customerId)
+
     // Record Debt Recovery Payment
     suspend fun recordRecoveryPayment(
         customerId: Long,
@@ -223,7 +228,7 @@ class PharmaRepository(
         paymentMode: String,
         referenceNumber: String,
         notes: String
-    ): Long {
+    ): RecoveryPayment {
         val receiptNumber = "REC-" + SimpleDateFormat("yyMMdd-HHmm", Locale.US).format(Date())
         val payment = RecoveryPayment(
             receiptNumber = receiptNumber,
@@ -240,7 +245,7 @@ class PharmaRepository(
 
         val paymentId = dao.insertRecoveryPayment(payment)
         dao.deductCustomerCredit(customerId, amountPaid, System.currentTimeMillis())
-        return paymentId
+        return payment.copy(id = paymentId)
     }
 
     // Process Return (Customer Return or Supplier Expiry Return)

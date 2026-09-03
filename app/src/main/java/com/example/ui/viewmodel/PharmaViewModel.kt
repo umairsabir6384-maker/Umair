@@ -17,6 +17,10 @@ import com.example.data.model.Supplier
 import com.example.data.repository.PharmaRepository
 import com.example.data.repository.PurchaseItemInput
 import com.example.data.repository.ReturnItemInput
+import com.example.util.WhatsAppHelper
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -28,12 +32,38 @@ import kotlinx.coroutines.launch
 enum class PharmaTab {
     DASHBOARD,
     SALES,
-    PURCHASES,
+    LEDGER,
     RECOVERY,
     RETURNS,
-    AI_COPILOT,
-    INVENTORY
+    INVENTORY,
+    AI_COPILOT
 }
+
+data class WhatsAppReceiptEvent(
+    val customerName: String,
+    val customerPhone: String,
+    val messageText: String
+)
+
+enum class LedgerEntryType {
+    SALE_INVOICE,
+    PAYMENT_RECEIVING
+}
+
+data class LedgerEntry(
+    val id: Long,
+    val type: LedgerEntryType,
+    val reference: String,
+    val timestamp: Long,
+    val debitAmount: Double,
+    val creditAmount: Double,
+    val runningBalance: Double,
+    val paymentMode: String = "",
+    val notes: String = "",
+    val totalInvoiceAmount: Double = 0.0,
+    val rawSale: SaleTransaction? = null,
+    val rawPayment: RecoveryPayment? = null
+)
 
 data class CartItem(
     val medicine: Medicine,
@@ -144,6 +174,143 @@ class PharmaViewModel(application: Application) : AndroidViewModel(application) 
 
     private val _selectedSaleForReceipt = MutableStateFlow<SaleTransaction?>(null)
     val selectedSaleForReceipt: StateFlow<SaleTransaction?> = _selectedSaleForReceipt.asStateFlow()
+
+    // Customer Ledger Single View State
+    private val _selectedLedgerCustomer = MutableStateFlow<Customer?>(null)
+    val selectedLedgerCustomer: StateFlow<Customer?> = _selectedLedgerCustomer.asStateFlow()
+
+    // Combined Chronological Ledger Entries for the selected customer
+    val customerLedgerEntries: StateFlow<List<LedgerEntry>> = combine(
+        _selectedLedgerCustomer,
+        sales,
+        recoveries
+    ) { customer, allSales, allRecoveries ->
+        if (customer == null) return@combine emptyList()
+        val custId = customer.id
+
+        val custSales = allSales.filter { it.customerId == custId }
+        val custRecoveries = allRecoveries.filter { it.customerId == custId }
+
+        val rawEntries = mutableListOf<Pair<Long, Any>>()
+        custSales.forEach { rawEntries.add(it.timestamp to it) }
+        custRecoveries.forEach { rawEntries.add(it.timestamp to it) }
+
+        // Sort ascending to calculate running ledger balance accurately
+        rawEntries.sortBy { it.first }
+
+        var balance = 0.0
+        val entries = mutableListOf<LedgerEntry>()
+
+        rawEntries.forEach { (_, item) ->
+            when (item) {
+                is SaleTransaction -> {
+                    val debit = item.balanceDue
+                    balance += debit
+                    entries.add(
+                        LedgerEntry(
+                            id = item.id,
+                            type = LedgerEntryType.SALE_INVOICE,
+                            reference = item.invoiceNumber,
+                            timestamp = item.timestamp,
+                            debitAmount = debit,
+                            creditAmount = item.paidAmount,
+                            runningBalance = balance,
+                            paymentMode = item.paymentMode,
+                            notes = item.notes.ifBlank { "Sale Invoice #${item.invoiceNumber}" },
+                            totalInvoiceAmount = item.totalAmount,
+                            rawSale = item
+                        )
+                    )
+                }
+                is RecoveryPayment -> {
+                    val credit = item.amountPaid
+                    balance = maxOf(0.0, balance - credit)
+                    entries.add(
+                        LedgerEntry(
+                            id = item.id,
+                            type = LedgerEntryType.PAYMENT_RECEIVING,
+                            reference = item.receiptNumber,
+                            timestamp = item.timestamp,
+                            debitAmount = 0.0,
+                            creditAmount = credit,
+                            runningBalance = balance,
+                            paymentMode = item.paymentMode,
+                            notes = item.notes.ifBlank { "Payment Receiving" },
+                            totalInvoiceAmount = 0.0,
+                            rawPayment = item
+                        )
+                    )
+                }
+            }
+        }
+
+        // Return latest transactions first for clean presentation
+        entries.reversed()
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    // WhatsApp Message Dispatch Event
+    private val _whatsAppEvent = MutableStateFlow<WhatsAppReceiptEvent?>(null)
+    val whatsAppEvent: StateFlow<WhatsAppReceiptEvent?> = _whatsAppEvent.asStateFlow()
+
+    fun selectLedgerCustomer(customer: Customer?) {
+        _selectedLedgerCustomer.value = customer
+    }
+
+    fun selectLedgerCustomerById(customerId: Long) {
+        val found = customers.value.find { it.id == customerId }
+        if (found != null) {
+            _selectedLedgerCustomer.value = found
+        }
+    }
+
+    fun clearWhatsAppEvent() {
+        _whatsAppEvent.value = null
+    }
+
+    fun triggerWhatsAppReceiptForPayment(customer: Customer, payment: RecoveryPayment) {
+        val msg = WhatsAppHelper.buildReceivingReceiptMessage(
+            customerName = customer.name,
+            receiptNo = payment.receiptNumber,
+            amountPaid = payment.amountPaid,
+            previousBalance = customer.outstandingBalance + payment.amountPaid,
+            remainingBalance = customer.outstandingBalance,
+            paymentMode = payment.paymentMode,
+            referenceNo = payment.referenceNumber,
+            timestamp = payment.timestamp
+        )
+        _whatsAppEvent.value = WhatsAppReceiptEvent(
+            customerName = customer.name,
+            customerPhone = customer.phone,
+            messageText = msg
+        )
+        _userFeedback.value = "Prepared WhatsApp receipt for ${customer.name}"
+    }
+
+    fun triggerWhatsAppStatementForCustomer(customer: Customer) {
+        val entries = customerLedgerEntries.value
+        val totalInvoiced = entries.filter { it.type == LedgerEntryType.SALE_INVOICE }.sumOf { it.totalInvoiceAmount }
+        val totalPaid = entries.filter { it.type == LedgerEntryType.PAYMENT_RECEIVING }.sumOf { it.creditAmount }
+        val recentSummary = entries.take(6).map { entry ->
+            val date = SimpleDateFormat("dd/MM", Locale.US).format(Date(entry.timestamp))
+            if (entry.type == LedgerEntryType.SALE_INVOICE) {
+                "• $date Inv #${entry.reference}: +$${String.format(Locale.US, "%.2f", entry.debitAmount)}"
+            } else {
+                "• $date Rec #${entry.reference}: -$${String.format(Locale.US, "%.2f", entry.creditAmount)} (${entry.paymentMode})"
+            }
+        }
+        val msg = WhatsAppHelper.buildLedgerStatementMessage(
+            customer = customer,
+            totalInvoiced = totalInvoiced,
+            totalRecovered = totalPaid,
+            recentTransactions = recentSummary
+        )
+        _whatsAppEvent.value = WhatsAppReceiptEvent(
+            customerName = customer.name,
+            customerPhone = customer.phone,
+            messageText = msg
+        )
+        _userFeedback.value = "Prepared full ledger statement for ${customer.name} on WhatsApp"
+    }
 
     // AI States
     private val _aiReminderText = MutableStateFlow<String?>(null)
@@ -370,16 +537,20 @@ class PharmaViewModel(application: Application) : AndroidViewModel(application) 
         amountPaid: Double,
         paymentMode: String,
         referenceNo: String,
-        notes: String
+        notes: String,
+        autoSendWhatsApp: Boolean = true
     ) {
         if (amountPaid <= 0) {
             _userFeedback.value = "Enter a valid recovery payment amount."
             return
         }
 
+        val previousBalance = customer.outstandingBalance
+        val remainingBalance = maxOf(0.0, previousBalance - amountPaid)
+
         viewModelScope.launch {
             try {
-                val recId = repository.recordRecoveryPayment(
+                val createdPayment = repository.recordRecoveryPayment(
                     customerId = customer.id,
                     customerName = customer.name,
                     customerPhone = customer.phone,
@@ -390,7 +561,27 @@ class PharmaViewModel(application: Application) : AndroidViewModel(application) 
                     notes = notes
                 )
 
-                _userFeedback.value = "Recovery of $${String.format("%.2f", amountPaid)} recorded from ${customer.name}!"
+                if (autoSendWhatsApp && customer.phone.isNotBlank()) {
+                    val msg = WhatsAppHelper.buildReceivingReceiptMessage(
+                        customerName = customer.name,
+                        receiptNo = createdPayment.receiptNumber,
+                        amountPaid = amountPaid,
+                        previousBalance = previousBalance,
+                        remainingBalance = remainingBalance,
+                        paymentMode = paymentMode,
+                        referenceNo = referenceNo,
+                        timestamp = createdPayment.timestamp
+                    )
+                    _whatsAppEvent.value = WhatsAppReceiptEvent(
+                        customerName = customer.name,
+                        customerPhone = customer.phone,
+                        messageText = msg
+                    )
+                    _userFeedback.value = "Recovery of $${String.format(Locale.US, "%.2f", amountPaid)} recorded! WhatsApp receipt prepared."
+                } else {
+                    _userFeedback.value = "Recovery of $${String.format(Locale.US, "%.2f", amountPaid)} recorded from ${customer.name}!"
+                }
+
                 closeRecordRecovery()
             } catch (e: Exception) {
                 _userFeedback.value = "Error recording recovery: ${e.message}"

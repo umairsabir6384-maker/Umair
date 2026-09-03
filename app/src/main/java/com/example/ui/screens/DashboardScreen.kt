@@ -24,6 +24,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.AssignmentReturn
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.AddShoppingCart
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Inventory2
@@ -77,7 +78,7 @@ import java.util.Locale
 fun DashboardScreen(
     viewModel: PharmaViewModel,
     salesSum: Double,
-    purchasesSum: Double,
+    customersCount: Int,
     outstandingRecovery: Double,
     returnsSum: Double,
     expiringBatches: List<Batch>,
@@ -188,14 +189,14 @@ fun DashboardScreen(
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     StatCard(
-                        title = "Stock Inward",
-                        amount = "$${String.format("%.2f", purchasesSum)}",
-                        subtitle = "Purchases recorded",
-                        icon = Icons.Default.AddShoppingCart,
+                        title = "Customer Ledger",
+                        amount = "$customersCount Accounts",
+                        subtitle = "WhatsApp & Statements",
+                        icon = Icons.AutoMirrored.Filled.ReceiptLong,
                         containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f),
                         contentColor = PharmaSecondaryLight,
                         modifier = Modifier.weight(1f),
-                        onClick = { viewModel.setTab(PharmaTab.PURCHASES) }
+                        onClick = { viewModel.setTab(PharmaTab.LEDGER) }
                     )
                     StatCard(
                         title = "Returns / Claims",
@@ -226,11 +227,11 @@ fun DashboardScreen(
                         onClick = { viewModel.openAddSale() }
                     )
                     GeometricNavCard(
-                        title = "Purchase",
-                        icon = Icons.Default.Inventory2,
+                        title = "Ledger & Sync",
+                        icon = Icons.AutoMirrored.Filled.ReceiptLong,
                         iconBackground = PharmaSecondaryLight,
                         modifier = Modifier.weight(1f),
-                        onClick = { viewModel.openAddPurchase() }
+                        onClick = { viewModel.setTab(PharmaTab.LEDGER) }
                     )
                 }
                 Row(

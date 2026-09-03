@@ -26,6 +26,7 @@ import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Call
+import androidx.compose.material.icons.filled.Message
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Warning
@@ -222,6 +223,10 @@ fun RecoveryScreen(
                         items(customersWithDues, key = { it.id }) { cust ->
                             CustomerDebtCard(
                                 customer = cust,
+                                onViewLedger = {
+                                    viewModel.selectLedgerCustomer(cust)
+                                    viewModel.setTab(com.example.ui.viewmodel.PharmaTab.LEDGER)
+                                },
                                 onRecordPayment = { viewModel.openRecordRecovery(cust) },
                                 onAiReminder = { viewModel.generateAiRecoveryReminder(cust, "Polite") },
                                 onCall = {
@@ -264,7 +269,27 @@ fun RecoveryScreen(
                         contentPadding = PaddingValues(bottom = 72.dp)
                     ) {
                         items(recoveries, key = { it.id }) { rec ->
-                            RecoveryReceiptCard(recovery = rec)
+                            val matchingCust = customers.find { it.id == rec.customerId }
+                            RecoveryReceiptCard(
+                                recovery = rec,
+                                onSendWhatsApp = {
+                                    if (matchingCust != null) {
+                                        viewModel.triggerWhatsAppReceiptForPayment(matchingCust, rec)
+                                    } else {
+                                        val msg = com.example.util.WhatsAppHelper.buildReceivingReceiptMessage(
+                                            customerName = rec.customerName,
+                                            receiptNo = rec.receiptNumber,
+                                            amountPaid = rec.amountPaid,
+                                            previousBalance = rec.amountPaid,
+                                            remainingBalance = 0.0,
+                                            paymentMode = rec.paymentMode,
+                                            referenceNo = rec.referenceNumber,
+                                            timestamp = rec.timestamp
+                                        )
+                                        com.example.util.WhatsAppHelper.sendWhatsAppMessage(context, rec.customerPhone, msg)
+                                    }
+                                }
+                            )
                         }
                     }
                 }
@@ -276,6 +301,7 @@ fun RecoveryScreen(
 @Composable
 fun CustomerDebtCard(
     customer: Customer,
+    onViewLedger: () -> Unit,
     onRecordPayment: () -> Unit,
     onAiReminder: () -> Unit,
     onCall: () -> Unit
@@ -331,28 +357,41 @@ fun CustomerDebtCard(
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // AI Reminder Button
-                Button(
-                    onClick = onAiReminder,
-                    modifier = Modifier.weight(1.3f).height(40.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                    shape = RoundedCornerShape(12.dp)
+                // View Ledger Button
+                OutlinedButton(
+                    onClick = onViewLedger,
+                    modifier = Modifier.weight(1f).height(40.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    contentPadding = PaddingValues(horizontal = 6.dp)
                 ) {
-                    Icon(Icons.Default.AutoAwesome, contentDescription = null, modifier = Modifier.size(15.dp))
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("AI Reminder", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    Icon(Icons.AutoMirrored.Filled.ReceiptLong, contentDescription = null, modifier = Modifier.size(14.dp))
+                    Spacer(modifier = Modifier.width(3.dp))
+                    Text("Ledger", fontSize = 11.sp, fontWeight = FontWeight.Bold)
                 }
 
                 // Record Payment Button
-                OutlinedButton(
+                Button(
                     onClick = onRecordPayment,
                     modifier = Modifier.weight(1.2f).height(40.dp),
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(12.dp),
+                    contentPadding = PaddingValues(horizontal = 6.dp)
                 ) {
                     Text("Collect", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                }
+
+                // AI Reminder Button
+                OutlinedButton(
+                    onClick = onAiReminder,
+                    modifier = Modifier.weight(1.1f).height(40.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    contentPadding = PaddingValues(horizontal = 6.dp)
+                ) {
+                    Icon(Icons.Default.AutoAwesome, contentDescription = null, modifier = Modifier.size(13.dp))
+                    Spacer(modifier = Modifier.width(2.dp))
+                    Text("AI Msg", fontSize = 10.sp, fontWeight = FontWeight.Bold)
                 }
 
                 // Quick Call
@@ -371,7 +410,10 @@ fun CustomerDebtCard(
 }
 
 @Composable
-fun RecoveryReceiptCard(recovery: RecoveryPayment) {
+fun RecoveryReceiptCard(
+    recovery: RecoveryPayment,
+    onSendWhatsApp: () -> Unit = {}
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -379,29 +421,47 @@ fun RecoveryReceiptCard(recovery: RecoveryPayment) {
         border = androidx.compose.foundation.BorderStroke(1.dp, com.example.ui.theme.GeometricBorder),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
-        Row(
-            modifier = Modifier.padding(14.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text(recovery.receiptNumber, fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                    StatusBadge(text = recovery.paymentMode, statusType = "SUCCESS")
+        Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text(recovery.receiptNumber, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                        StatusBadge(text = recovery.paymentMode, statusType = "SUCCESS")
+                    }
+                    Text("Received from: ${recovery.customerName}", fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
+                    Text(
+                        text = "Ref: ${recovery.referenceNumber.ifBlank { "N/A" }} • ${SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.US).format(Date(recovery.timestamp))}",
+                        fontSize = 10.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
-                Text("Received from: ${recovery.customerName}", fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
                 Text(
-                    text = "Ref: ${recovery.referenceNumber.ifBlank { "N/A" }} • ${SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.US).format(Date(recovery.timestamp))}",
-                    fontSize = 10.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    text = "+$${String.format("%.2f", recovery.amountPaid)}",
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 16.sp,
+                    color = StatusSuccess
                 )
             }
-            Text(
-                text = "+$${String.format("%.2f", recovery.amountPaid)}",
-                fontWeight = FontWeight.ExtraBold,
-                fontSize = 16.sp,
-                color = StatusSuccess
-            )
+
+            if (recovery.customerPhone.isNotBlank()) {
+                HorizontalDivider(color = com.example.ui.theme.GeometricBorder.copy(alpha = 0.4f))
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                    OutlinedButton(
+                        onClick = onSendWhatsApp,
+                        shape = RoundedCornerShape(10.dp),
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp),
+                        modifier = Modifier.height(30.dp)
+                    ) {
+                        Icon(Icons.Default.Message, contentDescription = "WhatsApp", tint = Color(0xFF25D366), modifier = Modifier.size(13.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Sync to WhatsApp", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF075E54))
+                    }
+                }
+            }
         }
     }
 }

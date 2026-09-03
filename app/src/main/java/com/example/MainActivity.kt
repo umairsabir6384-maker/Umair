@@ -11,7 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.AssignmentReturn
-import androidx.compose.material.icons.filled.AddShoppingCart
+import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.Medication
@@ -38,27 +38,28 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.ui.dialogs.AddMedicineDialog
-import com.example.ui.dialogs.AddPurchaseDialog
 import com.example.ui.dialogs.AddReturnDialog
 import com.example.ui.dialogs.AddSaleDialog
 import com.example.ui.dialogs.AiReminderDialog
 import com.example.ui.dialogs.RecordRecoveryDialog
 import com.example.ui.dialogs.SaleReceiptDialog
 import com.example.ui.screens.AiCopilotScreen
+import com.example.ui.screens.CustomerLedgerScreen
 import com.example.ui.screens.DashboardScreen
 import com.example.ui.screens.InventoryScreen
-import com.example.ui.screens.PurchasesScreen
 import com.example.ui.screens.RecoveryScreen
 import com.example.ui.screens.ReturnsScreen
 import com.example.ui.screens.SalesScreen
 import com.example.ui.theme.PharmaFlowTheme
 import com.example.ui.viewmodel.PharmaTab
 import com.example.ui.viewmodel.PharmaViewModel
+import com.example.util.WhatsAppHelper
 
 data class NavItem(
     val tab: PharmaTab,
@@ -87,6 +88,8 @@ fun PharmaApp(viewModel: PharmaViewModel) {
     val currentTab by viewModel.currentTab.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val userFeedback by viewModel.userFeedback.collectAsState()
+    val context = LocalContext.current
+    val whatsAppEvent by viewModel.whatsAppEvent.collectAsState()
 
     // Database states
     val medicines by viewModel.medicines.collectAsState()
@@ -95,21 +98,18 @@ fun PharmaApp(viewModel: PharmaViewModel) {
     val overdueCustomers by viewModel.overdueCustomers.collectAsState()
     val suppliers by viewModel.suppliers.collectAsState()
     val sales by viewModel.sales.collectAsState()
-    val purchases by viewModel.purchases.collectAsState()
     val recoveries by viewModel.recoveries.collectAsState()
     val returns by viewModel.returns.collectAsState()
     val expiringBatches by viewModel.expiringBatches.collectAsState()
 
     // Financial sums
     val salesSum by viewModel.totalSales.collectAsState()
-    val purchasesSum by viewModel.totalPurchases.collectAsState()
     val outstandingRecovery by viewModel.totalOutstandingRecovery.collectAsState()
     val returnsSum by viewModel.totalReturns.collectAsState()
 
     // Dialog & Cart states
     val saleCart by viewModel.saleCart.collectAsState()
     val showAddSale by viewModel.showAddSaleDialog.collectAsState()
-    val showAddPurchase by viewModel.showAddPurchaseDialog.collectAsState()
     val showRecordRecovery by viewModel.showRecordRecoveryDialog.collectAsState()
     val showAddReturn by viewModel.showAddReturnDialog.collectAsState()
     val showAddMedicine by viewModel.showAddMedicineDialog.collectAsState()
@@ -128,10 +128,22 @@ fun PharmaApp(viewModel: PharmaViewModel) {
         }
     }
 
+    // Auto-dispatch WhatsApp receipt or statement when requested and data is on
+    LaunchedEffect(whatsAppEvent) {
+        whatsAppEvent?.let { event ->
+            WhatsAppHelper.sendWhatsAppMessage(
+                context = context,
+                rawPhone = event.customerPhone,
+                messageText = event.messageText
+            )
+            viewModel.clearWhatsAppEvent()
+        }
+    }
+
     val navItems = listOf(
         NavItem(PharmaTab.DASHBOARD, "Home", Icons.Default.Dashboard, "nav_dashboard"),
         NavItem(PharmaTab.SALES, "Sales", Icons.Default.ShoppingBag, "nav_sales"),
-        NavItem(PharmaTab.PURCHASES, "Purchase", Icons.Default.AddShoppingCart, "nav_purchases"),
+        NavItem(PharmaTab.LEDGER, "Ledger", Icons.AutoMirrored.Filled.ReceiptLong, "nav_ledger"),
         NavItem(PharmaTab.RECOVERY, "Recovery", Icons.Default.Payments, "nav_recovery"),
         NavItem(PharmaTab.RETURNS, "Returns", Icons.AutoMirrored.Filled.AssignmentReturn, "nav_returns"),
         NavItem(PharmaTab.INVENTORY, "Medicines", Icons.Default.Medication, "nav_inventory"),
@@ -151,7 +163,7 @@ fun PharmaApp(viewModel: PharmaViewModel) {
                         text = when (currentTab) {
                             PharmaTab.DASHBOARD -> "PharmaFlow AI"
                             PharmaTab.SALES -> "Sales & Invoices"
-                            PharmaTab.PURCHASES -> "Stock Inward & Purchases"
+                            PharmaTab.LEDGER -> "Customer Account Ledger"
                             PharmaTab.RECOVERY -> "Accounts Receivable & Recovery"
                             PharmaTab.RETURNS -> "Returns & FEFO Expiry Radar"
                             PharmaTab.INVENTORY -> "Medicine Formulary"
@@ -213,7 +225,7 @@ fun PharmaApp(viewModel: PharmaViewModel) {
                     PharmaTab.DASHBOARD -> DashboardScreen(
                         viewModel = viewModel,
                         salesSum = salesSum,
-                        purchasesSum = purchasesSum,
+                        customersCount = customers.size,
                         outstandingRecovery = outstandingRecovery,
                         returnsSum = returnsSum,
                         expiringBatches = expiringBatches,
@@ -224,9 +236,8 @@ fun PharmaApp(viewModel: PharmaViewModel) {
                         viewModel = viewModel,
                         sales = sales
                     )
-                    PharmaTab.PURCHASES -> PurchasesScreen(
-                        viewModel = viewModel,
-                        purchases = purchases
+                    PharmaTab.LEDGER -> CustomerLedgerScreen(
+                        viewModel = viewModel
                     )
                     PharmaTab.RECOVERY -> RecoveryScreen(
                         viewModel = viewModel,
@@ -263,15 +274,6 @@ fun PharmaApp(viewModel: PharmaViewModel) {
             customers = customers,
             cartItems = saleCart,
             onDismiss = { viewModel.closeAddSale() }
-        )
-    }
-
-    if (showAddPurchase) {
-        AddPurchaseDialog(
-            viewModel = viewModel,
-            suppliers = suppliers,
-            medicines = medicines,
-            onDismiss = { viewModel.closeAddPurchase() }
         )
     }
 

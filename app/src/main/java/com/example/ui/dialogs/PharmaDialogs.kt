@@ -5,6 +5,7 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.widget.Toast
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -31,6 +32,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Message
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.ShoppingCart
@@ -39,6 +41,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DividerDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -750,6 +753,7 @@ fun RecordRecoveryDialog(
     var paymentMode by remember { mutableStateOf("CASH") } // CASH, BANK_TRANSFER, ONLINE, CHEQUE
     var referenceNo by remember { mutableStateOf("TXN-" + (10000..99999).random()) }
     var recoveryNotes by remember { mutableStateOf("Customer debt recovery payment") }
+    var autoSendWhatsApp by remember { mutableStateOf(true) }
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
@@ -772,7 +776,7 @@ fun RecordRecoveryDialog(
                     color = MaterialTheme.colorScheme.primary
                 )
                 Text(
-                    text = "Collect outstanding dues & credit balances",
+                    text = "Collect outstanding dues, credit balances & auto-sync WhatsApp receipt",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -813,6 +817,9 @@ fun RecordRecoveryDialog(
                         ) {
                             Column {
                                 Text(selectedCustomer!!.name, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                if (selectedCustomer!!.phone.isNotBlank()) {
+                                    Text("Phone: ${selectedCustomer!!.phone}", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
                                 Text("Overdue: ${selectedCustomer!!.daysOverdue} days", color = StatusDanger, fontSize = 12.sp)
                             }
                             Text(
@@ -847,6 +854,55 @@ fun RecordRecoveryDialog(
                         modifier = Modifier.fillMaxWidth(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                     )
+
+                    // WhatsApp Auto-Sync Toggle Card
+                    Card(
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = if (autoSendWhatsApp) Color(0xFFE8F8F0) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                        ),
+                        border = BorderStroke(1.dp, if (autoSendWhatsApp) Color(0xFF25D366).copy(alpha = 0.5f) else Color.LightGray.copy(alpha = 0.3f)),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                if (selectedCustomer!!.phone.isNotBlank()) {
+                                    autoSendWhatsApp = !autoSendWhatsApp
+                                }
+                            }
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Message,
+                                contentDescription = "WhatsApp",
+                                tint = if (autoSendWhatsApp) Color(0xFF25D366) else MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(22.dp)
+                            )
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Send WhatsApp Receipt to Customer",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 12.sp,
+                                    color = if (autoSendWhatsApp) Color(0xFF075E54) else MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = if (selectedCustomer!!.phone.isNotBlank())
+                                        "Automated message sent to ${selectedCustomer!!.phone} when data is connected"
+                                    else "⚠️ Customer has no phone recorded",
+                                    fontSize = 10.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Checkbox(
+                                checked = autoSendWhatsApp && selectedCustomer!!.phone.isNotBlank(),
+                                onCheckedChange = { autoSendWhatsApp = it },
+                                enabled = selectedCustomer!!.phone.isNotBlank()
+                            )
+                        }
+                    }
 
                     // Payment Mode Selector
                     Text("Payment Received Via:", style = MaterialTheme.typography.labelSmall)
@@ -907,14 +963,24 @@ fun RecordRecoveryDialog(
                                     amountPaid = amt,
                                     paymentMode = paymentMode,
                                     referenceNo = referenceNo,
-                                    notes = recoveryNotes
+                                    notes = recoveryNotes,
+                                    autoSendWhatsApp = autoSendWhatsApp
                                 )
                             }
                         },
+                        colors = if (autoSendWhatsApp && selectedCustomer?.phone?.isNotBlank() == true)
+                            ButtonDefaults.buttonColors(containerColor = Color(0xFF25D366))
+                        else ButtonDefaults.buttonColors(),
                         modifier = Modifier.weight(1.5f).height(48.dp).testTag("confirm_recovery_button"),
                         enabled = selectedCustomer != null && (amountText.toDoubleOrNull() ?: 0.0) > 0
                     ) {
-                        Text("Record Recovery", fontWeight = FontWeight.Bold)
+                        if (autoSendWhatsApp && selectedCustomer?.phone?.isNotBlank() == true) {
+                            Icon(Icons.Default.Message, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Save & WhatsApp", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                        } else {
+                            Text("Record Recovery", fontWeight = FontWeight.Bold)
+                        }
                     }
                 }
             }
