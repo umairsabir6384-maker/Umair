@@ -1,5 +1,5 @@
 {
-  "name": "PharmaFlow AI",
+  "name": "Umair",
   "description": "AI-powered pharmacy management featuring individual customer ledgers, automated WhatsApp receiving receipts, payment dues recovery, and FEFO expiry tracking.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]

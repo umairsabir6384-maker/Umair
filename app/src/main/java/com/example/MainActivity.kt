@@ -161,7 +161,7 @@ fun PharmaApp(viewModel: PharmaViewModel) {
                 title = {
                     Text(
                         text = when (currentTab) {
-                            PharmaTab.DASHBOARD -> "PharmaFlow AI"
+                            PharmaTab.DASHBOARD -> "Umair"
                             PharmaTab.SALES -> "Sales & Invoices"
                             PharmaTab.LEDGER -> "Customer Account Ledger"
                             PharmaTab.RECOVERY -> "Accounts Receivable & Recovery"

@@ -1509,7 +1509,7 @@ fun SaleReceiptDialog(
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedButton(
                         onClick = {
-                            val shareText = "PharmaFlow Invoice: ${sale.invoiceNumber}\nCustomer: ${sale.customerName}\nNet Amount: $${String.format("%.2f", sale.netPayable)}\nPaid: $${String.format("%.2f", sale.paidAmount)}\nBalance Due: $${String.format("%.2f", sale.balanceDue)}\nThank you for choosing PharmaFlow!"
+                            val shareText = "Umair Invoice: ${sale.invoiceNumber}\nCustomer: ${sale.customerName}\nNet Amount: $${String.format(Locale.US, "%.2f", sale.netPayable)}\nPaid: $${String.format(Locale.US, "%.2f", sale.paidAmount)}\nBalance Due: $${String.format(Locale.US, "%.2f", sale.balanceDue)}\nThank you for choosing Umair!"
                             val sendIntent = Intent().apply {
                                 action = Intent.ACTION_SEND
                                 putExtra(Intent.EXTRA_TEXT, shareText)

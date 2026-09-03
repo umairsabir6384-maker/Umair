@@ -36,7 +36,7 @@ class GeminiPharmaService {
         }
 
         try {
-            val systemPrompt = "You are an expert AI Pharmacy & Pharmaceutical Business Assistant (PharmaFlow AI). You assist pharmacy managers with medicine sales, purchase optimization, customer debt recovery, and FEFO expiry return handling. Provide structured, practical, and medically accurate responses with clear headings, bullet points, and actionable tips."
+            val systemPrompt = "You are an expert AI Pharmacy & Pharmaceutical Business Assistant (Umair AI). You assist pharmacy managers with medicine sales, customer debt recovery, individual account ledgers, and FEFO expiry return handling. Provide structured, practical, and medically accurate responses with clear headings, bullet points, and actionable tips."
             val fullPrompt = "$systemPrompt\n\nUser Request: $prompt"
 
             val requestJson = moshi.adapter(GeminiRequest::class.java).toJson(
@@ -125,7 +125,7 @@ class GeminiPharmaService {
                 Please arrange clearance at your earliest convenience to ensure uninterrupted medicine deliveries and maintain your preferred credit limit.
                 
                 *Thank you for your valued partnership,*  
-                **PharmaFlow Accounts & Billing Team**
+                **Umair Accounts & Billing Team**
                 """.trimIndent()
             }
             lower.contains("expiry") || lower.contains("fefo") || lower.contains("return") -> {
@@ -142,7 +142,7 @@ class GeminiPharmaService {
             }
             else -> {
                 """
-                ### 💡 PharmaFlow AI Business Intelligence
+                ### 💡 Umair AI Business Intelligence
                 
                 **Operational Insights for Your Pharmacy**:
                 • **FEFO Inventory Optimization**: Prioritize selling batches with the earliest expiration dates to cut stock write-offs by 35%.

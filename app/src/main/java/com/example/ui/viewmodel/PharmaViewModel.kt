@@ -323,7 +323,7 @@ class PharmaViewModel(application: Application) : AndroidViewModel(application) 
         listOf(
             AiChatMessage(
                 isUser = false,
-                message = "Hello! I am PharmaFlow AI, your pharmacy business copilot. You can ask me to:\n• Find generic drug substitutes and salt compositions\n• Draft polite or firm customer debt recovery messages\n• Plan FEFO expiry returns and vendor debit claims\n• Analyze sales margins and reorder forecasts."
+                message = "Hello! I am Umair AI, your pharmacy business copilot. You can ask me to:\n• Find generic drug substitutes and salt compositions\n• Draft polite or firm customer debt recovery messages\n• Plan FEFO expiry returns and vendor debit claims\n• Analyze sales margins and reorder forecasts."
             )
         )
     )

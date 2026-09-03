@@ -22,6 +22,6 @@ dependencyResolutionManagement {
   }
 }
 
-rootProject.name = "PharmaFlow AI"
+rootProject.name = "Umair"
 
 include(":app")

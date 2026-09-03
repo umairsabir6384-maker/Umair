@@ -105,7 +105,7 @@ fun AiCopilotScreen(
                 }
                 Column {
                     Text(
-                        text = "PharmaFlow AI Intelligence",
+                        text = "Umair AI Intelligence",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = Color.White
@@ -171,7 +171,7 @@ fun AiCopilotScreen(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
-                                Text("PharmaFlow AI is analyzing...", fontSize = 12.sp, color = MaterialTheme.colorScheme.primary)
+                                Text("Umair AI is analyzing...", fontSize = 12.sp, color = MaterialTheme.colorScheme.primary)
                             }
                         }
                     }

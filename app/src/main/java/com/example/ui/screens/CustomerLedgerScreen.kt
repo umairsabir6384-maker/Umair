@@ -286,7 +286,7 @@ fun CustomerLedgerScreen(
                                 // Direct WhatsApp Chat Button
                                 Button(
                                     onClick = {
-                                        val welcomeMsg = "Hello ${cust.name}, this is PharmaFlow Pharmacy. Here is an update on your account ledger."
+                                        val welcomeMsg = "Hello ${cust.name}, this is Umair Pharmacy. Here is an update on your account ledger."
                                         WhatsAppHelper.sendWhatsAppMessage(context, cust.phone, welcomeMsg)
                                     },
                                     modifier = Modifier

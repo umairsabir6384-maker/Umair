@@ -122,7 +122,7 @@ fun DashboardScreen(
                     }
                     Column {
                         Text(
-                            text = "PharmaFlow AI",
+                            text = "Umair",
                             fontSize = 20.sp,
                             fontWeight = FontWeight.SemiBold,
                             letterSpacing = (-0.5).sp,

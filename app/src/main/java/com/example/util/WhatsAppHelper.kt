@@ -53,7 +53,7 @@ object WhatsAppHelper {
         paymentMode: String,
         referenceNo: String,
         timestamp: Long = System.currentTimeMillis(),
-        pharmacyName: String = "PharmaFlow Pharmacy"
+        pharmacyName: String = "Umair Pharmacy"
     ): String {
         val formattedDate = SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.US).format(Date(timestamp))
         val amountStr = String.format(Locale.US, "%.2f", amountPaid)
@@ -99,7 +99,7 @@ _This is an automated system confirmation from $pharmacyName._
         totalInvoiced: Double,
         totalRecovered: Double,
         recentTransactions: List<String>,
-        pharmacyName: String = "PharmaFlow Pharmacy"
+        pharmacyName: String = "Umair Pharmacy"
     ): String {
         val dateStr = SimpleDateFormat("dd MMM yyyy", Locale.US).format(Date())
         val balStr = String.format(Locale.US, "%.2f", customer.outstandingBalance)
