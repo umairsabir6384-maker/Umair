@@ -22,11 +22,11 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Message
 import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Call
-import androidx.compose.material.icons.filled.Message
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Warning
@@ -456,7 +456,7 @@ fun RecoveryReceiptCard(
                         contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp),
                         modifier = Modifier.height(30.dp)
                     ) {
-                        Icon(Icons.Default.Message, contentDescription = "WhatsApp", tint = Color(0xFF25D366), modifier = Modifier.size(13.dp))
+                        Icon(Icons.AutoMirrored.Filled.Message, contentDescription = "WhatsApp", tint = Color(0xFF25D366), modifier = Modifier.size(13.dp))
                         Spacer(modifier = Modifier.width(4.dp))
                         Text("Sync to WhatsApp", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF075E54))
                     }

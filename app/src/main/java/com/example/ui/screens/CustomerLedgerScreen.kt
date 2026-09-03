@@ -23,11 +23,11 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Message
 import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Message
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Share
@@ -296,7 +296,7 @@ fun CustomerLedgerScreen(
                                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF25D366)),
                                     shape = RoundedCornerShape(12.dp)
                                 ) {
-                                    Icon(Icons.Default.Message, contentDescription = "WhatsApp", modifier = Modifier.size(16.dp))
+                                    Icon(Icons.AutoMirrored.Filled.Message, contentDescription = "WhatsApp", modifier = Modifier.size(16.dp))
                                     Spacer(modifier = Modifier.width(4.dp))
                                     Text("WhatsApp", fontSize = 11.sp, fontWeight = FontWeight.Bold)
                                 }
@@ -610,7 +610,7 @@ fun LedgerEntryCard(
                         modifier = Modifier.height(32.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Message,
+                            imageVector = Icons.AutoMirrored.Filled.Message,
                             contentDescription = "WhatsApp",
                             tint = Color(0xFF25D366),
                             modifier = Modifier.size(14.dp)

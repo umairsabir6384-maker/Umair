@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -28,11 +29,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Message
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Message
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.ShoppingCart
@@ -44,6 +45,8 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DividerDefaults
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -51,7 +54,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
-import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
@@ -180,25 +182,27 @@ fun AddSaleDialog(
                     )
 
                     // Customer selector pills
-                    ScrollableTabRow(
-                        selectedTabIndex = if (selectedCustomer == null) 0 else (customers.indexOf(selectedCustomer) + 1).coerceAtLeast(0),
-                        edgePadding = 0.dp,
-                        divider = {}
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        Tab(
-                            selected = selectedCustomer == null,
-                            onClick = { selectedCustomer = null },
-                            text = { Text("Walk-in Customer", fontSize = 12.sp) }
-                        )
-                        customers.forEach { cust ->
-                            Tab(
-                                selected = selectedCustomer?.id == cust.id,
+                        item {
+                            FilterChip(
+                                selected = selectedCustomer == null,
+                                onClick = { selectedCustomer = null },
+                                label = { Text("Walk-in Customer", fontSize = 12.sp) }
+                            )
+                        }
+                        items(customers, key = { it.id }) { cust ->
+                            val isSelected = selectedCustomer?.id == cust.id
+                            FilterChip(
+                                selected = isSelected,
                                 onClick = {
                                     selectedCustomer = cust
                                     customerNameText = cust.name
                                     customerPhoneText = cust.phone
                                 },
-                                text = {
+                                label = {
                                     Text(
                                         text = "${cust.name}${if (cust.outstandingBalance > 0) " ($${cust.outstandingBalance.toInt()} Due)" else ""}",
                                         fontSize = 12.sp
@@ -236,22 +240,22 @@ fun AddSaleDialog(
                         color = MaterialTheme.colorScheme.primary
                     )
 
-                    // Medicine Selector Scrollable row
+                    // Medicine Selector LazyRow
                     Text("Choose Medicine:", style = MaterialTheme.typography.labelSmall)
-                    ScrollableTabRow(
-                        selectedTabIndex = if (selectedMedicine == null) -1 else medicines.indexOf(selectedMedicine).coerceAtLeast(0),
-                        edgePadding = 0.dp,
-                        divider = {}
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        medicines.forEach { med ->
-                            Tab(
-                                selected = selectedMedicine?.id == med.id,
+                        items(medicines, key = { it.id }) { med ->
+                            val isSelected = selectedMedicine?.id == med.id
+                            FilterChip(
+                                selected = isSelected,
                                 onClick = {
                                     selectedMedicine = med
                                     val medBatches = batches.filter { it.medicineId == med.id && it.currentStock > 0 }.sortedBy { it.expiryDateEpochMs }
                                     selectedBatch = medBatches.firstOrNull()
                                 },
-                                text = { Text(med.name, fontSize = 12.sp, fontWeight = FontWeight.Medium) }
+                                label = { Text(med.name, fontSize = 12.sp, fontWeight = FontWeight.Medium) }
                             )
                         }
                     }
@@ -598,32 +602,32 @@ fun AddPurchaseDialog(
 
                 // Supplier Selector
                 Text("Select Distributor / Supplier:", style = MaterialTheme.typography.labelSmall)
-                ScrollableTabRow(
-                    selectedTabIndex = if (selectedSupplier == null) -1 else suppliers.indexOf(selectedSupplier).coerceAtLeast(0),
-                    edgePadding = 0.dp,
-                    divider = {}
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    suppliers.forEach { sup ->
-                        Tab(
-                            selected = selectedSupplier?.id == sup.id,
+                    items(suppliers, key = { it.id }) { sup ->
+                        val isSelected = selectedSupplier?.id == sup.id
+                        FilterChip(
+                            selected = isSelected,
                             onClick = { selectedSupplier = sup },
-                            text = { Text(sup.name, fontSize = 12.sp) }
+                            label = { Text(sup.name, fontSize = 12.sp) }
                         )
                     }
                 }
 
                 // Medicine Selector
                 Text("Select Medicine:", style = MaterialTheme.typography.labelSmall)
-                ScrollableTabRow(
-                    selectedTabIndex = if (selectedMedicine == null) -1 else medicines.indexOf(selectedMedicine).coerceAtLeast(0),
-                    edgePadding = 0.dp,
-                    divider = {}
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    medicines.forEach { med ->
-                        Tab(
-                            selected = selectedMedicine?.id == med.id,
+                    items(medicines, key = { it.id }) { med ->
+                        val isSelected = selectedMedicine?.id == med.id
+                        FilterChip(
+                            selected = isSelected,
                             onClick = { selectedMedicine = med },
-                            text = { Text(med.name, fontSize = 12.sp) }
+                            label = { Text(med.name, fontSize = 12.sp) }
                         )
                     }
                 }
@@ -787,19 +791,23 @@ fun RecordRecoveryDialog(
                 if (eligibleCustomers.isEmpty()) {
                     Text("✅ No customers have outstanding balances!", color = StatusSuccess, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                 } else {
-                    ScrollableTabRow(
-                        selectedTabIndex = if (selectedCustomer == null) -1 else eligibleCustomers.indexOf(selectedCustomer).coerceAtLeast(0),
-                        edgePadding = 0.dp,
-                        divider = {}
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        eligibleCustomers.forEach { cust ->
-                            Tab(
-                                selected = selectedCustomer?.id == cust.id,
+                        items(eligibleCustomers, key = { it.id }) { cust ->
+                            val isSelected = selectedCustomer?.id == cust.id
+                            FilterChip(
+                                selected = isSelected,
                                 onClick = {
                                     selectedCustomer = cust
-                                    amountText = String.format("%.2f", cust.outstandingBalance)
+                                    amountText = String.format(Locale.US, "%.2f", cust.outstandingBalance)
                                 },
-                                text = { Text("${cust.name} ($${cust.outstandingBalance.toInt()})", fontSize = 12.sp) }
+                                label = { Text("${cust.name} ($${cust.outstandingBalance.toInt()})", fontSize = 12.sp) },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                    selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
                             )
                         }
                     }
@@ -876,7 +884,7 @@ fun RecordRecoveryDialog(
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             Icon(
-                                imageVector = Icons.Default.Message,
+                                imageVector = Icons.AutoMirrored.Filled.Message,
                                 contentDescription = "WhatsApp",
                                 tint = if (autoSendWhatsApp) Color(0xFF25D366) else MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(22.dp)
@@ -975,7 +983,7 @@ fun RecordRecoveryDialog(
                         enabled = selectedCustomer != null && (amountText.toDoubleOrNull() ?: 0.0) > 0
                     ) {
                         if (autoSendWhatsApp && selectedCustomer?.phone?.isNotBlank() == true) {
-                            Icon(Icons.Default.Message, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Icon(Icons.AutoMirrored.Filled.Message, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(6.dp))
                             Text("Save & WhatsApp", fontWeight = FontWeight.Bold, fontSize = 13.sp)
                         } else {
@@ -1102,21 +1110,21 @@ fun AddReturnDialog(
 
                 // Select Medicine
                 Text("Select Medicine:", style = MaterialTheme.typography.labelSmall)
-                ScrollableTabRow(
-                    selectedTabIndex = if (selectedMedicine == null) -1 else medicines.indexOf(selectedMedicine).coerceAtLeast(0),
-                    edgePadding = 0.dp,
-                    divider = {}
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    medicines.forEach { med ->
-                        Tab(
-                            selected = selectedMedicine?.id == med.id,
+                    items(medicines, key = { it.id }) { med ->
+                        val isSelected = selectedMedicine?.id == med.id
+                        FilterChip(
+                            selected = isSelected,
                             onClick = {
                                 selectedMedicine = med
                                 val bList = batches.filter { it.medicineId == med.id }
                                 selectedBatch = bList.firstOrNull()
-                                unitRateText = String.format("%.2f", selectedBatch?.purchasePrice ?: 10.0)
+                                unitRateText = String.format(Locale.US, "%.2f", selectedBatch?.purchasePrice ?: 10.0)
                             },
-                            text = { Text(med.name, fontSize = 12.sp) }
+                            label = { Text(med.name, fontSize = 12.sp) }
                         )
                     }
                 }
