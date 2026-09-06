@@ -178,23 +178,16 @@ jobs:
               exit 1
               ;;
           esac
-
-          RELEASE_TAG="debug-apk-build-${{ github.run_number }}-${{ github.run_attempt }}"
-          RELEASE_TITLE="Debug APK Build #${{ github.run_number }}"
-
-          NOTES=$(cat <<EOF
-### Debug APK Build #${{ github.run_number }}
-
-- **Type**: Automatically generated debug APK
-- **Builder**: GitHub Actions
-- **Run Number**: #${{ github.run_number }}
-- **Run Attempt**: ${{ github.run_attempt }}
-- **Source Commit**: ${{ github.sha }}
-- **Target Audience**: Testing and verification
-- **Note**: This is not a Play Store production release. The APK is signed only with a temporary debug keystore.
-EOF
-          )
-
+          NOTES=$(printf '%s\n' \
+              "### Debug APK Build #${{ github.run_number }}" \
+              "" \
+              "- **Type**: Automatically generated debug APK" \
+              "- **Builder**: GitHub Actions" \
+              "- **Run Number**: #${{ github.run_number }}" \
+              "- **Run Attempt**: ${{ github.run_attempt }}" \
+              "- **Source Commit**: ${{ github.sha }}" \
+              "- **Target Audience**: Testing and verification" \
+              "- **Note**: This is not a Play Store production release. The APK is signed only with a temporary key.")
           echo "Creating GitHub Release with tag: $RELEASE_TAG ..."
           gh release create "$RELEASE_TAG" "$ASSET_PATH" \
             --target "${{ github.sha }}" \
