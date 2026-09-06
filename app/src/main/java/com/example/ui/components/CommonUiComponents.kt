@@ -1,6 +1,8 @@
 package com.example.ui.components
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.ui.platform.LocalContext
+import coil.request.ImageRequest
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -269,8 +271,14 @@ fun MedicineImageView(
                 contentScale = androidx.compose.ui.layout.ContentScale.Crop
             )
         } else if (imageUri.isNotBlank()) {
+            val context = LocalContext.current
             coil.compose.AsyncImage(
-                model = imageUri,
+                model = ImageRequest.Builder(context)
+                    .data(imageUri)
+                    .crossfade(true)
+                    .error(com.example.R.drawable.img_medicine_box)
+                    .placeholder(com.example.R.drawable.img_medicine_box)
+                    .build(),
                 contentDescription = contentDescription ?: "Medicine Photo",
                 modifier = Modifier.fillMaxSize(),
                 contentScale = androidx.compose.ui.layout.ContentScale.Crop

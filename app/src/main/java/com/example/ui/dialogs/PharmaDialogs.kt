@@ -1292,12 +1292,37 @@ fun AddMedicineDialog(
     var minStock by remember { mutableStateOf("20") }
     var locationRack by remember { mutableStateOf("Rack A-01") }
     var selectedImageUri by remember { mutableStateOf("res:img_medicine_box") }
+    val context = LocalContext.current
 
     val photoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
     ) { uri ->
         if (uri != null) {
-            selectedImageUri = uri.toString()
+            try {
+                // Try taking persistable read permission if granted
+                try {
+                    context.contentResolver.takePersistableUriPermission(
+                        uri,
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION
+                    )
+                } catch (_: Exception) {}
+
+                // Save persistent copy into app's private filesDir to guarantee permanent access
+                val medicineImagesDir = java.io.File(context.filesDir, "medicine_images")
+                if (!medicineImagesDir.exists()) {
+                    medicineImagesDir.mkdirs()
+                }
+                val destFile = java.io.File(medicineImagesDir, "med_${System.currentTimeMillis()}.jpg")
+                context.contentResolver.openInputStream(uri)?.use { input ->
+                    destFile.outputStream().use { output ->
+                        input.copyTo(output)
+                    }
+                }
+                selectedImageUri = destFile.absolutePath
+            } catch (e: Exception) {
+                // Fallback to direct URI string if copy fails
+                selectedImageUri = uri.toString()
+            }
         }
     }
 
@@ -1405,6 +1430,13 @@ fun AddMedicineDialog(
                                     onClick = { selectedImageUri = "res:img_syrup_bottle" },
                                     label = { Text("Syrup", fontSize = 10.sp) }
                                 )
+                                if (!selectedImageUri.startsWith("res:")) {
+                                    FilterChip(
+                                        selected = true,
+                                        onClick = {},
+                                        label = { Text("Custom", fontSize = 10.sp) }
+                                    )
+                                }
                             }
                         }
                     }
