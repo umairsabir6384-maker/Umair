@@ -28,12 +28,15 @@ import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material.icons.filled.WifiOff
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -130,6 +133,8 @@ fun CustomerLedgerScreen(
         ledgerEntries.filter { it.type == LedgerEntryType.PAYMENT_RECEIVING }.sumOf { it.creditAmount }
     }
 
+    var customerToDelete by remember { mutableStateOf<Customer?>(null) }
+
     Scaffold(
         modifier = modifier
             .fillMaxSize()
@@ -164,17 +169,36 @@ fun CustomerLedgerScreen(
             // 1. Top Customer Search & Selector Bar
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    OutlinedTextField(
-                        value = searchQuery,
-                        onValueChange = { searchQuery = it },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .testTag("ledger_customer_search"),
-                        placeholder = { Text("Search customer ledger (name, phone)...") },
-                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
-                        singleLine = true,
-                        shape = RoundedCornerShape(14.dp)
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        OutlinedTextField(
+                            value = searchQuery,
+                            onValueChange = { searchQuery = it },
+                            modifier = Modifier
+                                .weight(1f)
+                                .testTag("ledger_customer_search"),
+                            placeholder = { Text("Search customer ledger (name, phone)...") },
+                            leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
+                            singleLine = true,
+                            shape = RoundedCornerShape(14.dp)
+                        )
+
+                        Button(
+                            onClick = { viewModel.openAddCustomer() },
+                            modifier = Modifier
+                                .height(52.dp)
+                                .testTag("add_new_customer_btn"),
+                            shape = RoundedCornerShape(14.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                        ) {
+                            Icon(Icons.Default.PersonAdd, contentDescription = "Add Customer", modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Add", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                        }
+                    }
 
                     // Customer Selection Pills
                     LazyRow(
@@ -329,6 +353,23 @@ fun CustomerLedgerScreen(
                                         .background(MaterialTheme.colorScheme.surfaceVariant)
                                 ) {
                                     Icon(Icons.Default.Call, contentDescription = "Call", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+                                }
+
+                                // Delete Customer Button
+                                IconButton(
+                                    onClick = { customerToDelete = cust },
+                                    modifier = Modifier
+                                        .size(40.dp)
+                                        .clip(CircleShape)
+                                        .background(MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f))
+                                        .testTag("delete_customer_${cust.id}_btn")
+                                ) {
+                                    Icon(
+                                        Icons.Default.Delete,
+                                        contentDescription = "Delete Customer",
+                                        tint = MaterialTheme.colorScheme.error,
+                                        modifier = Modifier.size(18.dp)
+                                    )
                                 }
                             }
                         }
@@ -500,6 +541,38 @@ fun CustomerLedgerScreen(
                 }
             }
         }
+    }
+
+    if (customerToDelete != null) {
+        val cust = customerToDelete!!
+        AlertDialog(
+            onDismissRequest = { customerToDelete = null },
+            icon = { Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
+            title = { Text("Delete Customer") },
+            text = {
+                Text(
+                    "Are you sure you want to delete \"${cust.name}\"?\n\n" +
+                    if (cust.outstandingBalance > 0) "Warning: Customer has an outstanding balance of $${cust.outstandingBalance.toInt()}." else "This will permanently remove this customer profile."
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.deleteCustomer(cust)
+                        customerToDelete = null
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                    modifier = Modifier.testTag("confirm_delete_customer_btn")
+                ) {
+                    Text("Delete Customer")
+                }
+            },
+            dismissButton = {
+                OutlinedButton(onClick = { customerToDelete = null }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 }
 

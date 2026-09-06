@@ -13,7 +13,8 @@ data class Medicine(
     val manufacturer: String,
     val minStockLevel: Int = 10,
     val locationRack: String = "Rack A-01",
-    val description: String = ""
+    val description: String = "",
+    val imageUri: String = ""
 )
 
 @Entity(tableName = "batches")

@@ -169,6 +169,9 @@ class PharmaViewModel(application: Application) : AndroidViewModel(application) 
     private val _showAddMedicineDialog = MutableStateFlow(false)
     val showAddMedicineDialog: StateFlow<Boolean> = _showAddMedicineDialog.asStateFlow()
 
+    private val _showAddCustomerDialog = MutableStateFlow(false)
+    val showAddCustomerDialog: StateFlow<Boolean> = _showAddCustomerDialog.asStateFlow()
+
     private val _selectedCustomerForRecovery = MutableStateFlow<Customer?>(null)
     val selectedCustomerForRecovery: StateFlow<Customer?> = _selectedCustomerForRecovery.asStateFlow()
 
@@ -425,6 +428,13 @@ class PharmaViewModel(application: Application) : AndroidViewModel(application) 
         _showAddMedicineDialog.value = false
     }
 
+    fun openAddCustomer() {
+        _showAddCustomerDialog.value = true
+    }
+    fun closeAddCustomer() {
+        _showAddCustomerDialog.value = false
+    }
+
     fun openSaleReceipt(sale: SaleTransaction) {
         _selectedSaleForReceipt.value = sale
     }
@@ -647,7 +657,8 @@ class PharmaViewModel(application: Application) : AndroidViewModel(application) 
         dosageForm: String,
         manufacturer: String,
         minStockLevel: Int,
-        locationRack: String
+        locationRack: String,
+        imageUri: String = ""
     ) {
         if (name.isBlank()) {
             _userFeedback.value = "Medicine name is required."
@@ -663,13 +674,76 @@ class PharmaViewModel(application: Application) : AndroidViewModel(application) 
                     dosageForm = dosageForm.trim(),
                     manufacturer = manufacturer.trim(),
                     minStockLevel = maxOf(1, minStockLevel),
-                    locationRack = locationRack.trim()
+                    locationRack = locationRack.trim(),
+                    imageUri = imageUri.trim()
                 )
                 repository.insertMedicine(med)
                 _userFeedback.value = "Added $name to pharmacy catalog!"
                 closeAddMedicine()
             } catch (e: Exception) {
                 _userFeedback.value = "Failed to add medicine: ${e.message}"
+            }
+        }
+    }
+
+    // Delete Medicine
+    fun deleteMedicine(medicine: Medicine) {
+        viewModelScope.launch {
+            try {
+                repository.deleteMedicineWithBatches(medicine)
+                _userFeedback.value = "Deleted medicine ${medicine.name} and removed inventory batches."
+            } catch (e: Exception) {
+                _userFeedback.value = "Failed to delete medicine: ${e.message}"
+            }
+        }
+    }
+
+    // Add New Customer
+    fun submitCustomer(
+        name: String,
+        phone: String,
+        address: String = "",
+        creditLimit: Double = 50000.0,
+        initialBalance: Double = 0.0
+    ) {
+        if (name.isBlank()) {
+            _userFeedback.value = "Customer name is required."
+            return
+        }
+
+        viewModelScope.launch {
+            try {
+                val cust = Customer(
+                    name = name.trim(),
+                    phone = phone.trim(),
+                    address = address.trim(),
+                    creditLimit = maxOf(0.0, creditLimit),
+                    outstandingBalance = maxOf(0.0, initialBalance),
+                    lastPaymentDate = System.currentTimeMillis(),
+                    daysOverdue = if (initialBalance > 0) 1 else 0
+                )
+                val newId = repository.insertCustomer(cust)
+                val created = cust.copy(id = newId)
+                _selectedLedgerCustomer.value = created
+                _userFeedback.value = "Added customer ${cust.name} to ledger accounts!"
+                closeAddCustomer()
+            } catch (e: Exception) {
+                _userFeedback.value = "Failed to add customer: ${e.message}"
+            }
+        }
+    }
+
+    // Delete Customer
+    fun deleteCustomer(customer: Customer) {
+        viewModelScope.launch {
+            try {
+                repository.deleteCustomer(customer)
+                if (_selectedLedgerCustomer.value?.id == customer.id) {
+                    _selectedLedgerCustomer.value = null
+                }
+                _userFeedback.value = "Deleted customer ${customer.name} from accounts."
+            } catch (e: Exception) {
+                _userFeedback.value = "Failed to delete customer: ${e.message}"
             }
         }
     }

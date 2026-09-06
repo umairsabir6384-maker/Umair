@@ -19,17 +19,23 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.LocalPharmacy
 import androidx.compose.material.icons.filled.Medication
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -49,6 +55,7 @@ import androidx.compose.ui.unit.sp
 import com.example.data.model.Batch
 import com.example.data.model.Medicine
 import com.example.ui.components.EmptyStateView
+import com.example.ui.components.MedicineImageView
 import com.example.ui.components.StatusBadge
 import com.example.ui.theme.StatusDanger
 import com.example.ui.theme.StatusSuccess
@@ -64,6 +71,7 @@ fun InventoryScreen(
 ) {
     var searchQuery by remember { mutableStateOf("") }
     var selectedCategory by remember { mutableStateOf("ALL") }
+    var medicineToDelete by remember { mutableStateOf<Medicine?>(null) }
 
     val categories = remember(medicines) {
         listOf("ALL") + medicines.map { it.category }.distinct()
@@ -168,12 +176,42 @@ fun InventoryScreen(
                         MedicineCatalogCard(
                             medicine = med,
                             batches = medBatches,
-                            totalStock = totalStock
+                            totalStock = totalStock,
+                            onDeleteClick = { medicineToDelete = med }
                         )
                     }
                 }
             }
         }
+    }
+
+    if (medicineToDelete != null) {
+        val med = medicineToDelete!!
+        AlertDialog(
+            onDismissRequest = { medicineToDelete = null },
+            icon = { Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
+            title = { Text("Delete Medicine") },
+            text = {
+                Text("Are you sure you want to delete \"${med.name}\"?\n\nAll associated batch inventory and history will also be permanently deleted.")
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.deleteMedicine(med)
+                        medicineToDelete = null
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                    modifier = Modifier.testTag("confirm_delete_medicine_btn")
+                ) {
+                    Text("Delete Medicine")
+                }
+            },
+            dismissButton = {
+                OutlinedButton(onClick = { medicineToDelete = null }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 }
 
@@ -181,7 +219,8 @@ fun InventoryScreen(
 fun MedicineCatalogCard(
     medicine: Medicine,
     batches: List<Batch>,
-    totalStock: Int
+    totalStock: Int,
+    onDeleteClick: () -> Unit
 ) {
     val isLowStock = totalStock <= medicine.minStockLevel
 
@@ -194,37 +233,103 @@ fun MedicineCatalogCard(
         border = androidx.compose.foundation.BorderStroke(1.dp, com.example.ui.theme.GeometricBorder),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
-        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(medicine.name, fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                    Text("Salt: ${medicine.genericFormula}", fontSize = 12.sp, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Medium)
-                }
-                StatusBadge(
-                    text = if (totalStock == 0) "OUT OF STOCK" else if (isLowStock) "LOW STOCK" else "$totalStock Units",
-                    statusType = if (totalStock == 0) "DANGER" else if (isLowStock) "WARNING" else "SUCCESS"
+                // Picture Section for Medicine
+                MedicineImageView(
+                    imageUri = medicine.imageUri,
+                    dosageForm = medicine.dosageForm,
+                    modifier = Modifier
+                        .size(68.dp)
+                        .clip(RoundedCornerShape(14.dp)),
+                    contentDescription = medicine.name
                 )
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = medicine.name,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 15.sp,
+                            modifier = Modifier.weight(1f)
+                        )
+                        IconButton(
+                            onClick = onDeleteClick,
+                            modifier = Modifier
+                                .size(32.dp)
+                                .testTag("delete_medicine_${medicine.id}_btn")
+                        ) {
+                            Icon(
+                                Icons.Default.Delete,
+                                contentDescription = "Delete Medicine",
+                                tint = MaterialTheme.colorScheme.error.copy(alpha = 0.8f),
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
+
+                    Text(
+                        text = "Salt: ${medicine.genericFormula}",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Medium
+                    )
+
+                    Spacer(modifier = Modifier.height(2.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "${medicine.manufacturer} • ${medicine.dosageForm}",
+                            fontSize = 11.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        StatusBadge(
+                            text = if (totalStock == 0) "OUT OF STOCK" else if (isLowStock) "LOW STOCK" else "$totalStock Units",
+                            statusType = if (totalStock == 0) "DANGER" else if (isLowStock) "WARNING" else "SUCCESS"
+                        )
+                    }
+                }
             }
+
+            HorizontalDivider(color = com.example.ui.theme.GeometricBorder.copy(alpha = 0.6f))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column {
-                    Text("Mfr: ${medicine.manufacturer} • ${medicine.dosageForm}", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text("Storage Rack: ${medicine.locationRack}", fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
-                }
-                Column(horizontalAlignment = Alignment.End) {
-                    Text("Batches: ${batches.size} Lots", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    val nearestExpiry = batches.filter { it.currentStock > 0 }.minByOrNull { it.expiryDateEpochMs }
-                    if (nearestExpiry != null) {
-                        Text("Next Exp: ${nearestExpiry.expiryDateFormatted}", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = StatusWarning)
-                    }
+                Text(
+                    text = "📍 Rack: ${medicine.locationRack}",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                val nearestExpiry = batches.filter { it.currentStock > 0 }.minByOrNull { it.expiryDateEpochMs }
+                if (nearestExpiry != null) {
+                    Text(
+                        text = "Exp: ${nearestExpiry.expiryDateFormatted} (${batches.size} batches)",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = StatusWarning
+                    )
+                } else {
+                    Text(
+                        text = "${batches.size} Batches",
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
         }

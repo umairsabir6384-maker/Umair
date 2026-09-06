@@ -64,6 +64,11 @@ class PharmaRepository(
 
     suspend fun deleteMedicine(medicine: Medicine) = dao.deleteMedicine(medicine)
 
+    suspend fun deleteMedicineWithBatches(medicine: Medicine) {
+        dao.deleteBatchesByMedicineId(medicine.id)
+        dao.deleteMedicine(medicine)
+    }
+
     suspend fun insertBatch(batch: Batch): Long = dao.insertBatch(batch)
 
     suspend fun updateBatch(batch: Batch) = dao.updateBatch(batch)
@@ -73,6 +78,8 @@ class PharmaRepository(
     suspend fun insertCustomer(customer: Customer): Long = dao.insertCustomer(customer)
 
     suspend fun updateCustomer(customer: Customer) = dao.updateCustomer(customer)
+
+    suspend fun deleteCustomer(customer: Customer) = dao.deleteCustomer(customer)
 
     suspend fun insertSupplier(supplier: Supplier): Long = dao.insertSupplier(supplier)
 

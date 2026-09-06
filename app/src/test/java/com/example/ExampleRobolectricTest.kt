@@ -230,4 +230,51 @@ class ExampleRobolectricTest {
         )
         assertTrue(recoveryNotice.isNotBlank())
     }
+
+    @Test
+    fun `test adding and deleting customer`() = runBlocking {
+        val newCustomer = Customer(
+            id = 101L,
+            name = "Test Medical Store",
+            phone = "+923009988776",
+            address = "Main Boulevard, Lahore",
+            creditLimit = 1500.0,
+            outstandingBalance = 0.0
+        )
+        repository.insertCustomer(newCustomer)
+
+        val customersAfterAdd = repository.allCustomers.first()
+        assertTrue(customersAfterAdd.any { it.id == 101L })
+
+        // Delete customer
+        repository.deleteCustomer(newCustomer)
+        val customersAfterDelete = repository.allCustomers.first()
+        assertTrue(customersAfterDelete.none { it.id == 101L })
+    }
+
+    @Test
+    fun `test adding and deleting medicine with image support`() = runBlocking {
+        val medicine = Medicine(
+            name = "Test Ibuprofen 400mg",
+            genericFormula = "Ibuprofen",
+            dosageForm = "Tablet",
+            manufacturer = "Abbott Health",
+            category = "Pain & Inflammation",
+            minStockLevel = 10,
+            locationRack = "Rack T-1",
+            imageUri = "res:drawable/img_medicine_box"
+        )
+        val medId = repository.insertMedicine(medicine)
+        assertTrue(medId > 0)
+
+        val medicines = repository.allMedicines.first()
+        val retrievedMed = medicines.firstOrNull { it.id == medId }
+        assertTrue(retrievedMed != null)
+        assertEquals("res:drawable/img_medicine_box", retrievedMed?.imageUri)
+
+        // Delete medicine
+        repository.deleteMedicine(retrievedMed!!)
+        val medicinesAfterDelete = repository.allMedicines.first()
+        assertTrue(medicinesAfterDelete.none { it.id == medId })
+    }
 }

@@ -35,7 +35,7 @@ import java.util.Calendar
         ReturnTransaction::class,
         ReturnItem::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -53,6 +53,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "pharma_flow_db"
                 )
+                    .fallbackToDestructiveMigration()
                     .addCallback(DatabaseSeedCallback(scope))
                     .build()
                 INSTANCE = instance
@@ -87,15 +88,15 @@ abstract class AppDatabase : RoomDatabase() {
             val c5 = dao.insertCustomer(Customer(name = "Family Health Centre", phone = "+1 (555) 912-4455", address = "Downtown Square 8", creditLimit = 60000.0, outstandingBalance = 8400.0, daysOverdue = 12))
 
             // Medicines
-            val m1 = dao.insertMedicine(Medicine(name = "Augmentin 625mg", genericFormula = "Amoxicillin + Clavulanic Acid", category = "Antibiotic", dosageForm = "Tablet", manufacturer = "GSK", minStockLevel = 25, locationRack = "Rack A-01", description = "Broad spectrum antibiotic for bacterial infections"))
-            val m2 = dao.insertMedicine(Medicine(name = "Panadol Extra 500mg", genericFormula = "Paracetamol + Caffeine", category = "Analgesic", dosageForm = "Tablet", manufacturer = "Haleon", minStockLevel = 50, locationRack = "Rack A-02", description = "Fast relief from tough headaches and body aches"))
-            val m3 = dao.insertMedicine(Medicine(name = "Glucophage 500mg", genericFormula = "Metformin Hydrochloride", category = "Antidiabetic", dosageForm = "Tablet", manufacturer = "Merck", minStockLevel = 30, locationRack = "Rack B-01", description = "First-line medication for type 2 diabetes management"))
-            val m4 = dao.insertMedicine(Medicine(name = "Losec 20mg", genericFormula = "Omeprazole", category = "Gastrointestinal", dosageForm = "Capsule", manufacturer = "AstraZeneca", minStockLevel = 20, locationRack = "Rack B-02", description = "Proton pump inhibitor for acid reflux and GERD"))
-            val m5 = dao.insertMedicine(Medicine(name = "Zithromax 500mg", genericFormula = "Azithromycin", category = "Antibiotic", dosageForm = "Tablet", manufacturer = "Pfizer", minStockLevel = 15, locationRack = "Rack A-03", description = "Macrolide antibiotic for respiratory tract infections"))
-            val m6 = dao.insertMedicine(Medicine(name = "Brufen 400mg", genericFormula = "Ibuprofen", category = "Anti-inflammatory", dosageForm = "Tablet", manufacturer = "Abbott", minStockLevel = 40, locationRack = "Rack C-01", description = "Nonsteroidal anti-inflammatory drug (NSAID)"))
-            val m7 = dao.insertMedicine(Medicine(name = "Ventolin Evohaler 100mcg", genericFormula = "Salbutamol Sulfate", category = "Respiratory", dosageForm = "Inhaler", manufacturer = "GSK", minStockLevel = 15, locationRack = "Rack C-03", description = "Fast-acting bronchodilator for asthma relief"))
-            val m8 = dao.insertMedicine(Medicine(name = "Zyrtec 10mg", genericFormula = "Cetirizine HCl", category = "Antihistamine", dosageForm = "Tablet", manufacturer = "UCB Pharma", minStockLevel = 25, locationRack = "Rack D-01", description = "Allergy and hay fever symptom relief"))
-            val m9 = dao.insertMedicine(Medicine(name = "Ciprobay 500mg", genericFormula = "Ciprofloxacin", category = "Antibiotic", dosageForm = "Tablet", manufacturer = "Bayer", minStockLevel = 15, locationRack = "Rack A-04", description = "Fluoroquinolone antibiotic"))
+            val m1 = dao.insertMedicine(Medicine(name = "Augmentin 625mg", genericFormula = "Amoxicillin + Clavulanic Acid", category = "Antibiotic", dosageForm = "Tablet", manufacturer = "GSK", minStockLevel = 25, locationRack = "Rack A-01", description = "Broad spectrum antibiotic for bacterial infections", imageUri = "res:img_medicine_box"))
+            val m2 = dao.insertMedicine(Medicine(name = "Panadol Extra 500mg", genericFormula = "Paracetamol + Caffeine", category = "Analgesic", dosageForm = "Tablet", manufacturer = "Haleon", minStockLevel = 50, locationRack = "Rack A-02", description = "Fast relief from tough headaches and body aches", imageUri = "res:img_capsules_pack"))
+            val m3 = dao.insertMedicine(Medicine(name = "Glucophage 500mg", genericFormula = "Metformin Hydrochloride", category = "Antidiabetic", dosageForm = "Tablet", manufacturer = "Merck", minStockLevel = 30, locationRack = "Rack B-01", description = "First-line medication for type 2 diabetes management", imageUri = "res:img_medicine_box"))
+            val m4 = dao.insertMedicine(Medicine(name = "Losec 20mg", genericFormula = "Omeprazole", category = "Gastrointestinal", dosageForm = "Capsule", manufacturer = "AstraZeneca", minStockLevel = 20, locationRack = "Rack B-02", description = "Proton pump inhibitor for acid reflux and GERD", imageUri = "res:img_capsules_pack"))
+            val m5 = dao.insertMedicine(Medicine(name = "Zithromax 500mg", genericFormula = "Azithromycin", category = "Antibiotic", dosageForm = "Tablet", manufacturer = "Pfizer", minStockLevel = 15, locationRack = "Rack A-03", description = "Macrolide antibiotic for respiratory tract infections", imageUri = "res:img_medicine_box"))
+            val m6 = dao.insertMedicine(Medicine(name = "Brufen 400mg", genericFormula = "Ibuprofen", category = "Anti-inflammatory", dosageForm = "Tablet", manufacturer = "Abbott", minStockLevel = 40, locationRack = "Rack C-01", description = "Nonsteroidal anti-inflammatory drug (NSAID)", imageUri = "res:img_capsules_pack"))
+            val m7 = dao.insertMedicine(Medicine(name = "Ventolin Evohaler 100mcg", genericFormula = "Salbutamol Sulfate", category = "Respiratory", dosageForm = "Inhaler", manufacturer = "GSK", minStockLevel = 15, locationRack = "Rack C-03", description = "Fast-acting bronchodilator for asthma relief", imageUri = "res:img_syrup_bottle"))
+            val m8 = dao.insertMedicine(Medicine(name = "Zyrtec 10mg", genericFormula = "Cetirizine HCl", category = "Antihistamine", dosageForm = "Tablet", manufacturer = "UCB Pharma", minStockLevel = 25, locationRack = "Rack D-01", description = "Allergy and hay fever symptom relief", imageUri = "res:img_capsules_pack"))
+            val m9 = dao.insertMedicine(Medicine(name = "Ciprobay 500mg", genericFormula = "Ciprofloxacin", category = "Antibiotic", dosageForm = "Tablet", manufacturer = "Bayer", minStockLevel = 15, locationRack = "Rack A-04", description = "Fluoroquinolone antibiotic", imageUri = "res:img_medicine_box"))
 
             val now = System.currentTimeMillis()
             val cal = Calendar.getInstance()

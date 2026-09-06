@@ -76,6 +76,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.material.icons.filled.AddPhotoAlternate
+import androidx.compose.material.icons.filled.Image
+import com.example.ui.components.MedicineImageView
 import com.example.data.model.Batch
 import com.example.data.model.Customer
 import com.example.data.model.Medicine
@@ -1285,6 +1291,15 @@ fun AddMedicineDialog(
     var manufacturer by remember { mutableStateOf("GSK") }
     var minStock by remember { mutableStateOf("20") }
     var locationRack by remember { mutableStateOf("Rack A-01") }
+    var selectedImageUri by remember { mutableStateOf("res:img_medicine_box") }
+
+    val photoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        if (uri != null) {
+            selectedImageUri = uri.toString()
+        }
+    }
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
@@ -1300,25 +1315,106 @@ fun AddMedicineDialog(
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text(
+                            text = "Add Medicine to Catalog",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            text = "Enter medicine details, picture, salt and storage",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    IconButton(onClick = onDismiss) {
+                        Icon(Icons.Default.Close, contentDescription = "Close")
+                    }
+                }
+
+                HorizontalDivider()
+
+                // --- Medicine Picture Section ---
                 Text(
-                    text = "Add Medicine to Catalog",
-                    style = MaterialTheme.typography.titleLarge,
+                    text = "Medicine Picture / Photo",
+                    style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary
                 )
-                Text(
-                    text = "Enter medicine details, salt composition, and rack storage",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
 
-                HorizontalDivider()
+                Card(
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(14.dp)
+                    ) {
+                        MedicineImageView(
+                            imageUri = selectedImageUri,
+                            dosageForm = dosageForm,
+                            modifier = Modifier
+                                .size(76.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                        )
+
+                        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Button(
+                                onClick = {
+                                    photoPickerLauncher.launch(
+                                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                    )
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(38.dp)
+                                    .testTag("pick_medicine_photo_btn"),
+                                shape = RoundedCornerShape(10.dp)
+                            ) {
+                                Icon(Icons.Default.AddPhotoAlternate, contentDescription = "Pick Photo", modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Choose Photo", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                            }
+
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                FilterChip(
+                                    selected = selectedImageUri == "res:img_medicine_box",
+                                    onClick = { selectedImageUri = "res:img_medicine_box" },
+                                    label = { Text("Box", fontSize = 10.sp) }
+                                )
+                                FilterChip(
+                                    selected = selectedImageUri == "res:img_capsules_pack",
+                                    onClick = { selectedImageUri = "res:img_capsules_pack" },
+                                    label = { Text("Pills", fontSize = 10.sp) }
+                                )
+                                FilterChip(
+                                    selected = selectedImageUri == "res:img_syrup_bottle",
+                                    onClick = { selectedImageUri = "res:img_syrup_bottle" },
+                                    label = { Text("Syrup", fontSize = 10.sp) }
+                                )
+                            }
+                        }
+                    }
+                }
 
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
                     label = { Text("Medicine Brand Name (e.g. Augmentin 625mg)") },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().testTag("medicine_name_input"),
                     singleLine = true
                 )
 
@@ -1326,7 +1422,7 @@ fun AddMedicineDialog(
                     value = genericFormula,
                     onValueChange = { genericFormula = it },
                     label = { Text("Generic Salt / Formula (e.g. Amoxicillin + Clavulanic Acid)") },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().testTag("medicine_salt_input"),
                     singleLine = true
                 )
 
@@ -1341,7 +1437,7 @@ fun AddMedicineDialog(
                     OutlinedTextField(
                         value = dosageForm,
                         onValueChange = { dosageForm = it },
-                        label = { Text("Dosage Form (Tablet, Syrup)") },
+                        label = { Text("Dosage Form") },
                         modifier = Modifier.weight(1f),
                         singleLine = true
                     )
@@ -1351,14 +1447,14 @@ fun AddMedicineDialog(
                     OutlinedTextField(
                         value = manufacturer,
                         onValueChange = { manufacturer = it },
-                        label = { Text("Pharma Manufacturer") },
+                        label = { Text("Manufacturer") },
                         modifier = Modifier.weight(1f),
                         singleLine = true
                     )
                     OutlinedTextField(
                         value = minStock,
                         onValueChange = { minStock = it },
-                        label = { Text("Min Reorder Qty") },
+                        label = { Text("Min Stock") },
                         modifier = Modifier.weight(1f),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                     )
@@ -1387,13 +1483,139 @@ fun AddMedicineDialog(
                                 dosageForm = dosageForm,
                                 manufacturer = manufacturer,
                                 minStockLevel = minStock.toIntOrNull() ?: 20,
-                                locationRack = locationRack
+                                locationRack = locationRack,
+                                imageUri = selectedImageUri
                             )
                         },
                         modifier = Modifier.weight(1.5f).height(48.dp).testTag("confirm_medicine_button"),
                         enabled = name.isNotBlank()
                     ) {
                         Text("Save Medicine", fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun AddCustomerDialog(
+    viewModel: PharmaViewModel,
+    onDismiss: () -> Unit
+) {
+    var name by remember { mutableStateOf("") }
+    var phone by remember { mutableStateOf("") }
+    var address by remember { mutableStateOf("") }
+    var creditLimit by remember { mutableStateOf("50000") }
+    var initialBalance by remember { mutableStateOf("0") }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth(0.95f)
+                .clip(RoundedCornerShape(24.dp)),
+            color = MaterialTheme.colorScheme.surface,
+            tonalElevation = 6.dp
+        ) {
+            Column(
+                modifier = Modifier
+                    .padding(20.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text(
+                            text = "Add New Customer",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            text = "Create customer profile for accounts & WhatsApp billing",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    IconButton(onClick = onDismiss) {
+                        Icon(Icons.Default.Close, contentDescription = "Close")
+                    }
+                }
+
+                HorizontalDivider()
+
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Customer / Clinic / Doctor Name *") },
+                    modifier = Modifier.fillMaxWidth().testTag("customer_name_input"),
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp)
+                )
+
+                OutlinedTextField(
+                    value = phone,
+                    onValueChange = { phone = it },
+                    label = { Text("Phone (with country code for WhatsApp)") },
+                    placeholder = { Text("+1 (555) 000-0000") },
+                    modifier = Modifier.fillMaxWidth().testTag("customer_phone_input"),
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                    shape = RoundedCornerShape(12.dp)
+                )
+
+                OutlinedTextField(
+                    value = address,
+                    onValueChange = { address = it },
+                    label = { Text("Clinic / Hospital Address") },
+                    modifier = Modifier.fillMaxWidth().testTag("customer_address_input"),
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp)
+                )
+
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = creditLimit,
+                        onValueChange = { creditLimit = it },
+                        label = { Text("Credit Limit ($)") },
+                        modifier = Modifier.weight(1f).testTag("customer_credit_limit_input"),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                    OutlinedTextField(
+                        value = initialBalance,
+                        onValueChange = { initialBalance = it },
+                        label = { Text("Opening Due ($)") },
+                        modifier = Modifier.weight(1f).testTag("customer_initial_balance_input"),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(6.dp))
+
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    OutlinedButton(onClick = onDismiss, modifier = Modifier.weight(1f).height(48.dp)) {
+                        Text("Cancel")
+                    }
+                    Button(
+                        onClick = {
+                            viewModel.submitCustomer(
+                                name = name,
+                                phone = phone,
+                                address = address,
+                                creditLimit = creditLimit.toDoubleOrNull() ?: 50000.0,
+                                initialBalance = initialBalance.toDoubleOrNull() ?: 0.0
+                            )
+                        },
+                        modifier = Modifier.weight(1.5f).height(48.dp).testTag("save_customer_button"),
+                        enabled = name.isNotBlank()
+                    ) {
+                        Text("Save Customer", fontWeight = FontWeight.Bold)
                     }
                 }
             }

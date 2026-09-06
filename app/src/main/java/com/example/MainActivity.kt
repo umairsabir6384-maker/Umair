@@ -43,6 +43,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.ui.dialogs.AddCustomerDialog
 import com.example.ui.dialogs.AddMedicineDialog
 import com.example.ui.dialogs.AddReturnDialog
 import com.example.ui.dialogs.AddSaleDialog
@@ -113,6 +114,7 @@ fun PharmaApp(viewModel: PharmaViewModel) {
     val showRecordRecovery by viewModel.showRecordRecoveryDialog.collectAsState()
     val showAddReturn by viewModel.showAddReturnDialog.collectAsState()
     val showAddMedicine by viewModel.showAddMedicineDialog.collectAsState()
+    val showAddCustomer by viewModel.showAddCustomerDialog.collectAsState()
     val selectedCustomerForRecovery by viewModel.selectedCustomerForRecovery.collectAsState()
     val selectedSaleForReceipt by viewModel.selectedSaleForReceipt.collectAsState()
 
@@ -301,6 +303,13 @@ fun PharmaApp(viewModel: PharmaViewModel) {
         AddMedicineDialog(
             viewModel = viewModel,
             onDismiss = { viewModel.closeAddMedicine() }
+        )
+    }
+
+    if (showAddCustomer) {
+        AddCustomerDialog(
+            viewModel = viewModel,
+            onDismiss = { viewModel.closeAddCustomer() }
         )
     }
 

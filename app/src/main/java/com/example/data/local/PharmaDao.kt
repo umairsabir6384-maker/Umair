@@ -42,6 +42,9 @@ interface PharmaDao {
     @Delete
     suspend fun deleteMedicine(medicine: Medicine)
 
+    @Query("DELETE FROM batches WHERE medicineId = :medicineId")
+    suspend fun deleteBatchesByMedicineId(medicineId: Long)
+
     // --- Batches & Inventory (FEFO Support) ---
     @Query("SELECT * FROM batches ORDER BY expiryDateEpochMs ASC")
     fun getAllBatches(): Flow<List<Batch>>
@@ -91,6 +94,12 @@ interface PharmaDao {
 
     @Update
     suspend fun updateCustomer(customer: Customer)
+
+    @Delete
+    suspend fun deleteCustomer(customer: Customer)
+
+    @Query("DELETE FROM customers WHERE id = :customerId")
+    suspend fun deleteCustomerById(customerId: Long)
 
     @Query("UPDATE customers SET outstandingBalance = outstandingBalance + :amount WHERE id = :customerId")
     suspend fun addCustomerCredit(customerId: Long, amount: Double)

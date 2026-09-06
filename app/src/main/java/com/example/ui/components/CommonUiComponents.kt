@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -15,6 +16,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Medication
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -235,3 +238,58 @@ fun EmptyStateView(
         }
     }
 }
+
+@Composable
+fun MedicineImageView(
+    imageUri: String,
+    dosageForm: String,
+    modifier: Modifier = Modifier,
+    contentDescription: String? = null
+) {
+    val resDrawableId = androidx.compose.runtime.remember(imageUri) {
+        when {
+            imageUri == "res:img_medicine_box" || imageUri.contains("img_medicine_box") -> com.example.R.drawable.img_medicine_box
+            imageUri == "res:img_syrup_bottle" || imageUri.contains("img_syrup_bottle") -> com.example.R.drawable.img_syrup_bottle
+            imageUri == "res:img_capsules_pack" || imageUri.contains("img_capsules_pack") -> com.example.R.drawable.img_capsules_pack
+            else -> null
+        }
+    }
+
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(12.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+        contentAlignment = Alignment.Center
+    ) {
+        if (resDrawableId != null) {
+            androidx.compose.foundation.Image(
+                painter = androidx.compose.ui.res.painterResource(id = resDrawableId),
+                contentDescription = contentDescription ?: "Medicine Photo",
+                modifier = Modifier.fillMaxSize(),
+                contentScale = androidx.compose.ui.layout.ContentScale.Crop
+            )
+        } else if (imageUri.isNotBlank()) {
+            coil.compose.AsyncImage(
+                model = imageUri,
+                contentDescription = contentDescription ?: "Medicine Photo",
+                modifier = Modifier.fillMaxSize(),
+                contentScale = androidx.compose.ui.layout.ContentScale.Crop
+            )
+        } else {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = androidx.compose.material.icons.Icons.Default.Medication,
+                    contentDescription = contentDescription,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(28.dp)
+                )
+            }
+        }
+    }
+}
+
